@@ -51,8 +51,8 @@ public:
 	// Draw the lines to the image with size the max size of x or y
 	img::EasyImage drawTriangles(img::EasyImage& image);
 	img::EasyImage drawTriangles(img::EasyImage& image, int size);
-	// img::EasyImage drawTrianglesZBuffered(ZBuffer buffer, img::EasyImage& image);
-	// img::EasyImage drawTrianglesZBuffered(img::EasyImage& image, int size);
+	img::EasyImage drawTrianglesZBuffered(double d, ZBuffer buffer, img::EasyImage& image);
+	img::EasyImage drawTrianglesZBuffered(img::EasyImage& image, int size);
 };
 
 #endif /* TRIANGLEDRAWING_H */

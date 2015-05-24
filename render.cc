@@ -146,7 +146,7 @@ img::EasyImage Render::renderZBuffered (const ini::Configuration &configuration)
     drawing.addTrianglesFromProjection(figures);
 
     img::EasyImage image = img::EasyImage(size, size, img::Color(roundToInt(back[0] * 255), roundToInt(back[1] * 255), roundToInt(back[2] * 255)));
-    drawing.drawTriangles(image, size);
+    drawing.drawTrianglesZBuffered(image, size);
 
     return image;
 }

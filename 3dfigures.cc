@@ -323,6 +323,9 @@ void addLinesFromLString (Figure& l3dsystemFigure, LParser::LSystem3D l_system, 
 
 	Vector3D position = Vector3D::point(0, 0, 0);
 	std::vector <Vector3D> positions;
+	std::vector <Vector3D> Hstack;
+	std::vector <Vector3D> Lstack;
+	std::vector <Vector3D> Ustack;
 
 	double lSystemAngle = l_system.get_angle() * 0.0174532925;
 
@@ -330,51 +333,58 @@ void addLinesFromLString (Figure& l3dsystemFigure, LParser::LSystem3D l_system, 
 
 	for(std::string::const_iterator i = fullString.begin(); i != fullString.end(); i++) {
 		char c = *i;
+		Vector3D oldH = H;
+		Vector3D oldL = L;
+		Vector3D oldU = U;
+
 		//std::cout << c << " ";
 		if (c == '-') {
-			H =  H * std::cos(-lSystemAngle) + L * std::sin(-lSystemAngle);
-			L = -H * std::sin(-lSystemAngle) + L * std::cos(-lSystemAngle);
+			H =  oldH * std::cos(-lSystemAngle) + oldL * std::sin(-lSystemAngle);
+			L = -oldH * std::sin(-lSystemAngle) + oldL * std::cos(-lSystemAngle);
 			continue;
 		}
 
 		if (c == '+') {
-			H =  H * std::cos(lSystemAngle) + L * std::sin(lSystemAngle);
-			L = -H * std::sin(lSystemAngle) + L * std::cos(lSystemAngle);
+			H =  oldH * std::cos(lSystemAngle) + oldL * std::sin(lSystemAngle);
+			L = -oldH * std::sin(lSystemAngle) + oldL * std::cos(lSystemAngle);
 			continue;
 		}
 
 		if (c == '^') {
-			H =  H * std::cos(lSystemAngle) + U * std::sin(lSystemAngle);
-			U = -H * std::sin(lSystemAngle) + U * std::cos(lSystemAngle);
+			H =  oldH * std::cos(lSystemAngle) + oldU * std::sin(lSystemAngle);
+			U = -oldH * std::sin(lSystemAngle) + oldU * std::cos(lSystemAngle);
 			continue;
 		}
 
 		if (c == '&') {
-			H =  H * std::cos(-lSystemAngle) + U * std::sin(-lSystemAngle);
-			U = -H * std::sin(-lSystemAngle) + U * std::cos(-lSystemAngle);
+			H =  oldH * std::cos(-lSystemAngle) + oldU * std::sin(-lSystemAngle);
+			U = -oldH * std::sin(-lSystemAngle) + oldU * std::cos(-lSystemAngle);
 			continue;
 		}
 
 		if (c == '\\') {
-			L = L * std::cos(lSystemAngle) - U * std::sin(lSystemAngle);
-			U = L * std::sin(lSystemAngle) + U * std::cos(lSystemAngle);
+			L = oldL * std::cos(lSystemAngle) - oldU * std::sin(lSystemAngle);
+			U = oldL * std::sin(lSystemAngle) + oldU * std::cos(lSystemAngle);
 			continue;
 		}
 
 		if (c == '/') {
-			L = L * std::cos(-lSystemAngle) - U * std::sin(-lSystemAngle);
-			U = L * std::sin(-lSystemAngle) + U * std::cos(-lSystemAngle);
+			L = oldL * std::cos(-lSystemAngle) - oldU * std::sin(-lSystemAngle);
+			U = oldL * std::sin(-lSystemAngle) + oldU * std::cos(-lSystemAngle);
 			continue;
 		}
 
 		if (c == '|') {
-			H = -H;
-			L = -L;
+			H = -oldH;
+			L = -oldL;
 			continue;
 		}
 
 		if (c == '(') {
 			positions.push_back(position);
+			Hstack.push_back(H);
+			Lstack.push_back(L);
+			Ustack.push_back(U);
 			continue;
 		}
 
@@ -387,6 +397,16 @@ void addLinesFromLString (Figure& l3dsystemFigure, LParser::LSystem3D l_system, 
 			
 			position = positions.back();
 			positions.pop_back();
+
+			H = Hstack.back();
+			Hstack.pop_back();
+
+			L = Lstack.back();
+			Lstack.pop_back();
+
+			U = Ustack.back();
+			Ustack.pop_back();
+
 			continue;
 		}
 

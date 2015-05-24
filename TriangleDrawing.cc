@@ -67,12 +67,12 @@ void TriangleDrawing::addTrianglesFromProjection (Figures3D& figures) {
 
 		Color color = Color(figure.color.red, figure.color.green, figure.color.blue);
 		for (auto &face : figure.faces) {
-			int size = face.point_indexes.size() - 1;
-			for (int i = 0; i < size; i += 2) {
+			int size = face.point_indexes.size();
+			for (int i = 1; i < size - 1; i ++) {
 				this->addTriangle(Triangle(
 					std::vector<Point2d> {projected_points[face.point_indexes[i]],
 						                  projected_points[face.point_indexes[(i + 1) % size]],
-						                  projected_points[face.point_indexes[(i + 2) % size]]},
+						                  projected_points[face.point_indexes[0]]},
 					color
 				));
 			}
@@ -82,9 +82,6 @@ void TriangleDrawing::addTrianglesFromProjection (Figures3D& figures) {
 
 img::EasyImage TriangleDrawing::drawTriangles (img::EasyImage& image) {
 	for (auto &triangle : triangles) {
-
-		std::cout << triangle.points[0].x << ", " << triangle.points[0].y << " and " << triangle.points[1].x << "," << triangle.points[1].y << " and " << triangle.points[2].x << triangle.points[2].y << std::endl;
-		
 		// Bounding box
 		int minY = roundToInt(std::min(std::min(triangle.points[0].y, triangle.points[1].y), triangle.points[2].y) + 0.5);
 		int maxY = roundToInt(std::max(std::max(triangle.points[0].y, triangle.points[1].y), triangle.points[2].y) - 0.5);
@@ -155,126 +152,93 @@ img::EasyImage TriangleDrawing::drawTriangles (img::EasyImage& image, int size) 
 	return this->drawTriangles(image);
 }
 
-// img::EasyImage LineDrawing::draw2dLinesZBuffered (ZBuffer buffer, img::EasyImage& image) {
-// 	for (auto &line : lines) {
-// 		img::Color color = img::Color(line.color.red, line.color.green, line.color.blue);
-// 		unsigned int x0 = roundToInt(line.start.x);
-// 		unsigned int x1 = roundToInt(line.end.x);
-// 		unsigned int y0 = roundToInt(line.start.y);
-// 		unsigned int y1 = roundToInt(line.end.y);
+img::EasyImage TriangleDrawing::drawTrianglesZBuffered (double d, ZBuffer buffer, img::EasyImage& image) {
+	for (auto &triangle : triangles) {
+		// Bounding box
+		int minY = roundToInt(std::min(std::min(triangle.points[0].y, triangle.points[1].y), triangle.points[2].y) + 0.5);
+		int maxY = roundToInt(std::max(std::max(triangle.points[0].y, triangle.points[1].y), triangle.points[2].y) - 0.5);
 
-// 		if (x0 == x1) {
-// 			//special case for x0 == x1
-// 			for (unsigned int i = std::min(y0, y1); i <= std::max(y0, y1); i++) {
-// 				// Calculate Z Value
-// 				double oneOverZ;
-// 				if (std::max(y0, y1) - std::min(y0, y1) == 0) {
-// 					// Neither x nor y changes, so just use the biggest Z
-// 					oneOverZ = 1 / std::max(line.start.z, line.end.z);
-// 				} else {
-// 					double p = (i - std::min(y0, y1)) / (std::max(y0, y1) - std::min(y0, y1));
-// 					if (line.start.y == std::min(y0, y1)) {
-// 						oneOverZ = 1 / ((line.end.z - line.start.z) * p + line.start.z);
-// 					} else {
-// 						oneOverZ = 1 / ((line.start.z - line.end.z) * p + line.end.z);
-// 					}
-// 				}
-// 				if (buffer[x0][i] > oneOverZ) {
-// 					image(x0, i) = color;
-// 					buffer[x0][i] = oneOverZ;
-// 				}
-// 			}
-// 		} else if (y0 == y1) {
-// 			//special case for y0 == y1
-// 			for (unsigned int i = std::min(x0, x1); i <= std::max(x0, x1); i++) {
-// 				double oneOverZ;
-// 				double p = (i - std::min(x0, x1)) / (std::max(x0, x1) - std::min(x0, x1));
-// 				if (line.start.x == std::min(x0, x1)) {
-// 					oneOverZ = 1 / ((line.end.z - line.start.z) * p + line.start.z);
-// 				} else {
-// 					oneOverZ = 1 / ((line.start.z - line.end.z) * p + line.end.z);
-// 				}
-// 				if (buffer[i][y0] > oneOverZ) {
-// 					image(i, y0) = color;
-// 					buffer[i][y0] = oneOverZ;
-// 				}
-// 			}
-// 		} else {
-// 			if (x0 > x1) {
-// 				//flip points if x1>x0: we want x0 to have the lowest value
-// 				std::swap(x0, x1);
-// 				std::swap(y0, y1);
-// 			}
-// 			double m = ((double) y1 - (double) y0) / ((double) x1 - (double) x0);
-// 			if (-1.0 <= m && m <= 1.0) {
-// 				for (unsigned int i = 0; i <= (x1 - x0); i++) {
-// 					double oneOverZ;
-// 					double p = i / (x1 - x0);
-// 					if (line.start.x == x0) {
-// 						oneOverZ = 1 / ((line.end.z - line.start.z) * p + line.start.z);
-// 					} else {
-// 						oneOverZ = 1 / ((line.start.z - line.end.z) * p + line.end.z);
-// 					}
-// 					if (buffer[x0 + i][(unsigned int) round(y0 + m * i)] > oneOverZ) {
-// 						image(x0 + i, (unsigned int) round(y0 + m * i)) = color;
-// 						buffer[x0 + i][(unsigned int) round(y0 + m * i)] = oneOverZ;
-// 					}
-// 				}
-// 			} else if (m > 1.0) {
-// 				for (unsigned int i = 0; i <= (y1 - y0); i++) {
-// 					double oneOverZ;
-// 					double p = i / (y1 - y0);
-// 					if (line.start.y == y0) {
-// 						oneOverZ = 1 / ((line.end.z - line.start.z) * p + line.start.z);
-// 					} else {
-// 						oneOverZ = 1 / ((line.start.z - line.end.z) * p + line.end.z);
-// 					}
-// 					if (buffer[(unsigned int) round(x0 + (i / m))][y0 + i] > oneOverZ) {
-// 						image((unsigned int) round(x0 + (i / m)), y0 + i) = color;
-// 						buffer[(unsigned int) round(x0 + (i / m))][y0 + i] = oneOverZ;
-// 					}
-// 				}
-// 			}
-// 			else if (m < -1.0) {
-// 				for (unsigned int i = 0; i <= (y0 - y1); i++) {
-// 					double oneOverZ;
-// 					double p = i / (y0 - y1);
-// 					if (line.start.y == y1) {
-// 						oneOverZ = 1 / ((line.end.z - line.start.z) * p + line.start.z);
-// 					} else {
-// 						oneOverZ = 1 / ((line.start.z - line.end.z) * p + line.end.z);
-// 					}
-// 					if (buffer[(unsigned int) round(x0 - (i / m))][y0 - i] > oneOverZ) {
-// 						image((unsigned int) round(x0 - (i / m)), y0 - i) = color;
-// 						buffer[(unsigned int) round(x0 - (i / m))][y0 - i] = oneOverZ;
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return image;
-// }
+		Point2d middle = Point2d((triangle.points[0].x + triangle.points[1].x + triangle.points[2].x) / 3,
+		                         (triangle.points[0].y + triangle.points[1].y + triangle.points[2].y) / 3,
+		                         1 / (3 * triangle.points[0].z) + 1 / (3 * triangle.points[1].z) + 1 / (3 * triangle.points[2].z));
 
-// img::EasyImage LineDrawing::draw2dLinesZBuffered (img::EasyImage& image, int size) {
-// 	Point2d max = this->getMaxPoint();
-// 	Point2d min = this->getMinPoint();
+		Point2d temp;
+		img::Color color = img::Color(triangle.color.red, triangle.color.green, triangle.color.blue);
+		for (temp.y = minY; temp.y <= maxY; temp.y++) {
+			double xABL = std::numeric_limits<double>::infinity();
+			double xACL = std::numeric_limits<double>::infinity();
+			double xBCL = std::numeric_limits<double>::infinity();
+			double xABR = -std::numeric_limits<double>::infinity();
+			double xACR = -std::numeric_limits<double>::infinity();
+			double xBCR = -std::numeric_limits<double>::infinity();
 
-// 	double xRange = max.x - min.x;
-// 	double yRange = max.y - min.y;
+			// p0 to p1
+			if ((temp.y - triangle.points[0].y) * (temp.y - triangle.points[1].y) <= 0 && triangle.points[0].y != triangle.points[1].y) {
+				double xI = triangle.points[0].x + (triangle.points[1].x - triangle.points[0].x) * (temp.y - triangle.points[0].y) / (triangle.points[1].y - triangle.points[0].y);
+				xABL = xI;
+				xABR = xI;
+			}
 
-// 	double biggestRange = std::max(xRange, yRange);
+			// p1 to p2
+			if ((temp.y - triangle.points[1].y) * (temp.y - triangle.points[2].y) <= 0 && triangle.points[1].y != triangle.points[2].y) {
+				double xI = triangle.points[1].x + (triangle.points[2].x - triangle.points[1].x) * (temp.y - triangle.points[1].y) / (triangle.points[2].y - triangle.points[1].y);
+				xACL = xI;
+				xACR = xI;
+			}
 
-// 	double imageXRange = size * xRange / biggestRange;
+			// p2 to p0
+			if ((temp.y - triangle.points[2].y) * (temp.y - triangle.points[0].y) <= 0 && triangle.points[2].y != triangle.points[0].y) {
+				double xI = triangle.points[2].x + (triangle.points[0].x - triangle.points[2].x) * (temp.y - triangle.points[2].y) / (triangle.points[0].y - triangle.points[2].y);
+				xBCL = xI;
+				xBCR = xI;
+			}
 
-// 	double scaleFactor = 0.95 * imageXRange / xRange;
-// 	this->scaleLines(scaleFactor);
+			int xL = roundToInt(std::min(xABL, std::min(xACL, xBCL)) + 0.5);
+			int xR = roundToInt(std::max(xABR, std::max(xACR, xBCR)) - 0.5);
 
-// 	double dcx = scaleFactor * (max.x + min.x) / 2;
-// 	double dcy = scaleFactor * (max.y + min.y) / 2;
+			for (temp.x = xL; temp.x <= xR; temp.x++) {
+				Vector3D u = Vector3D::vector(triangle.points[1].x - triangle.points[0].x, triangle.points[1].y - triangle.points[0].y, triangle.points[1].z - triangle.points[0].z);
+				Vector3D v = Vector3D::vector(triangle.points[2].x - triangle.points[0].x, triangle.points[2].y - triangle.points[0].y, triangle.points[2].z - triangle.points[0].z);
 
-// 	double dx = image.get_width() / 2 - dcx;
-// 	double dy = image.get_height() / 2 - dcy;
-// 	this->moveLines(dx, dy);
+				double w1 = u.y * v.z - u.z * v.y;
+				double w2 = u.z * v.x - u.x * v.z;
+				double w3 = u.x * v.y - u.y * v.x;
 
-// 	return this->draw2dLinesZBuffered(ZBuffer(size, size), image);
-// }
+				double k = w1 * triangle.points[0].x + w2 * triangle.points[0].y + w3 * triangle.points[0].z;
+				double dzdx = w1 / (-k * d);
+				double dzdy = w2 / (-k * d);
+
+				double oneOverZ = 1.0001 * middle.z + (temp.x - middle.x) * dzdx + (temp.y - middle.y) * dzdy;
+				if (buffer[temp.x][temp.y] > oneOverZ) {
+					image(temp.x, temp.y) = color;
+					buffer[temp.x][temp.y] = oneOverZ;
+				}
+			}
+		}
+	}
+	return image;
+}
+
+img::EasyImage TriangleDrawing::drawTrianglesZBuffered (img::EasyImage& image, int size) {
+	Point2d max = this->getMaxPoint();
+	Point2d min = this->getMinPoint();
+
+	double xRange = max.x - min.x;
+	double yRange = max.y - min.y;
+
+	double biggestRange = std::max(xRange, yRange);
+
+	double imageXRange = size * xRange / biggestRange;
+
+	double scaleFactor = 0.95 * imageXRange / xRange;
+	this->scaleTriangles(scaleFactor);
+
+	double dcx = scaleFactor * (max.x + min.x) / 2;
+	double dcy = scaleFactor * (max.y + min.y) / 2;
+
+	double dx = image.get_width() / 2 - dcx;
+	double dy = image.get_height() / 2 - dcy;
+	this->moveTriangles(dx, dy);
+
+	return this->drawTrianglesZBuffered(scaleFactor, ZBuffer(size, size), image);
+}
