@@ -14,12 +14,12 @@
 class Triangle {
 public:
 	Triangle () {};
-	Triangle (std::vector<Vector3D> points, Color color) {
+	Triangle (std::vector<Point2d> points, Color color) {
 		this->points = points;
 		this->color = color;
 	};
 
-	std::vector<Vector3D> points;
+	std::vector<Point2d> points;
 	Color color;
 };
 

@@ -3,6 +3,7 @@
 #include "2dhelpers.h"
 #include "3dfigures.h"
 #include "LineDrawing.h"
+#include "TriangleDrawing.h"
 #include <limits>
 #include <cmath>
 
@@ -19,7 +20,7 @@ void TriangleDrawing::addTriangle (Triangle triangle) {
 Point2d TriangleDrawing::getMaxPoint () {
 	Point2d max = Point2d(-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity());
 	for (auto &triangle : this->triangles) {
-		for (auto &point : triangle) {
+		for (auto &point : triangle.points) {
 			if (max.x < point.x) max.x = point.x;
 			if (max.y < point.y) max.y = point.y;
 		}
@@ -30,7 +31,7 @@ Point2d TriangleDrawing::getMaxPoint () {
 Point2d TriangleDrawing::getMinPoint () {
 	Point2d min = Point2d(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
 	for (auto &triangle : this->triangles) {
-		for (auto &point : triangle) {
+		for (auto &point : triangle.points) {
 			if (min.x > point.x) min.x = point.x;
 			if (min.y > point.y) min.y = point.y;
 		}
@@ -40,7 +41,7 @@ Point2d TriangleDrawing::getMinPoint () {
 
 void TriangleDrawing::scaleTriangles (double scaleFactor) {
 	for (auto &triangle : this->triangles) {
-		for (auto &point : triangle) {
+		for (auto &point : triangle.points) {
 			point.x *= scaleFactor;
 			point.y *= scaleFactor;
 		}
@@ -49,7 +50,7 @@ void TriangleDrawing::scaleTriangles (double scaleFactor) {
 
 void TriangleDrawing::moveTriangles (double dx, double dy) {
 	for (auto &triangle : this->triangles) {
-		for (auto &point : triangle) {
+		for (auto &point : triangle.points) {
 			point.x += dx;
 			point.y += dy;
 		}
@@ -81,10 +82,51 @@ void TriangleDrawing::addTrianglesFromProjection (Figures3D& figures) {
 
 img::EasyImage TriangleDrawing::drawTriangles (img::EasyImage& image) {
 	for (auto &triangle : triangles) {
-		int minX = roundToInt(std::min(std::min(triangle.points[0], triangle.points[1]), triangle.points[2]));
-		int minY = roundToInt(std::min(std::min(triangle.points[0], triangle.points[1]), triangle.points[2]));
-		int maxX = roundToInt(std::min(std::min(triangle.points[0], triangle.points[1]), triangle.points[2]));
-		int minX = roundToInt(std::min(std::min(triangle.points[0], triangle.points[1]), triangle.points[2]));
+
+		std::cout << triangle.points[0].x << ", " << triangle.points[0].y << " and " << triangle.points[1].x << "," << triangle.points[1].y << " and " << triangle.points[2].x << triangle.points[2].y << std::endl;
+		
+		// Bounding box
+		int minY = roundToInt(std::min(std::min(triangle.points[0].y, triangle.points[1].y), triangle.points[2].y) + 0.5);
+		int maxY = roundToInt(std::max(std::max(triangle.points[0].y, triangle.points[1].y), triangle.points[2].y) - 0.5);
+
+		Point2d temp;
+		img::Color color = img::Color(triangle.color.red, triangle.color.green, triangle.color.blue);
+		for (temp.y = minY; temp.y <= maxY; temp.y++) {
+			double xABL = std::numeric_limits<double>::infinity();
+			double xACL = std::numeric_limits<double>::infinity();
+			double xBCL = std::numeric_limits<double>::infinity();
+			double xABR = -std::numeric_limits<double>::infinity();
+			double xACR = -std::numeric_limits<double>::infinity();
+			double xBCR = -std::numeric_limits<double>::infinity();
+
+			// p0 to p1
+			if ((temp.y - triangle.points[0].y) * (temp.y - triangle.points[1].y) <= 0 && triangle.points[0].y != triangle.points[1].y) {
+				double xI = triangle.points[0].x + (triangle.points[1].x - triangle.points[0].x) * (temp.y - triangle.points[0].y) / (triangle.points[1].y - triangle.points[0].y);
+				xABL = xI;
+				xABR = xI;
+			}
+
+			// p1 to p2
+			if ((temp.y - triangle.points[1].y) * (temp.y - triangle.points[2].y) <= 0 && triangle.points[1].y != triangle.points[2].y) {
+				double xI = triangle.points[1].x + (triangle.points[2].x - triangle.points[1].x) * (temp.y - triangle.points[1].y) / (triangle.points[2].y - triangle.points[1].y);
+				xACL = xI;
+				xACR = xI;
+			}
+
+			// p2 to p0
+			if ((temp.y - triangle.points[2].y) * (temp.y - triangle.points[0].y) <= 0 && triangle.points[2].y != triangle.points[0].y) {
+				double xI = triangle.points[2].x + (triangle.points[0].x - triangle.points[2].x) * (temp.y - triangle.points[2].y) / (triangle.points[0].y - triangle.points[2].y);
+				xBCL = xI;
+				xBCR = xI;
+			}
+
+			int xL = roundToInt(std::min(xABL, std::min(xACL, xBCL)) + 0.5);
+			int xR = roundToInt(std::max(xABR, std::max(xACR, xBCR)) - 0.5);
+
+			for (temp.x = xL; temp.x <= xR; temp.x++) {
+				image(temp.x, temp.y) = color;
+			}
+		}
 	}
 	return image;
 }

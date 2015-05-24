@@ -1,6 +1,7 @@
 #include "EasyImage.h"
 #include "lparser.h"
 #include "LineDrawing.h"
+#include "TriangleDrawing.h"
 #include "render.h"
 #include "vector.hh"
 #include "3dfigures.h"
@@ -111,26 +112,8 @@ img::EasyImage Render::renderWireFrameZBuffered (const ini::Configuration &confi
     return image;
 }
 
-void projectFigures (Figures3D figures, img::EasyImage image, int size) {
-    for (auto &figure : figures) {
-        std::vector<Point2d> projected_points;
-
-        for (auto &point : figure.points) {
-            projected_points.push_back(Point2d(point.x / -point.z, point.y / -point.z, point.z));
-        }
-
-        Color color = Color(figure.color.red, figure.color.green, figure.color.blue);
-        for (auto &face : figure.faces) {
-            int size = face.point_indexes.size();
-            for (int i = 0; i < size; i++) {
-                this->addLine(Line2d(projected_points[face.point_indexes[i]], projected_points[face.point_indexes[(i + 1) % size]], color));
-            }
-        }
-    }
-}
-
 img::EasyImage Render::renderZBuffered (const ini::Configuration &configuration) {
-    LineDrawing wireFrameLines = LineDrawing();
+    TriangleDrawing drawing = TriangleDrawing();
 
     int size = configuration["General"]["size"].as_int_or_die();
     int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
@@ -160,8 +143,10 @@ img::EasyImage Render::renderZBuffered (const ini::Configuration &configuration)
         figure.applyTransformation(figure.allMatrix * eyePointMatrix);
     }
 
+    drawing.addTrianglesFromProjection(figures);
+
     img::EasyImage image = img::EasyImage(size, size, img::Color(roundToInt(back[0] * 255), roundToInt(back[1] * 255), roundToInt(back[2] * 255)));
-    projectFigures(figures, image, size);
+    drawing.drawTriangles(image, size);
 
     return image;
 }
