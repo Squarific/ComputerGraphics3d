@@ -6,4 +6,6 @@ public:
 	Render() {};
 	img::EasyImage renderTwo2dLSystem (const ini::Configuration &configuration);
 	img::EasyImage renderWireFrame (const ini::Configuration &configuration);
+	img::EasyImage renderWireFrameZBuffered (const ini::Configuration &configuration);
+	img::EasyImage renderZBuffered (const ini::Configuration &configuration);
 };

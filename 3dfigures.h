@@ -13,7 +13,10 @@ class Face {
 	//punten in de ‘points’ vector
 	//van de Figure-klasse	
 	std::vector<int> point_indexes;
-	Face() {};
+	Face () {};
+	Face (std::vector<int> point_indexes) {
+		this->point_indexes = point_indexes;
+	};
 };
 
 class Figure {
@@ -21,8 +24,9 @@ public:
 	std::vector<Vector3D> points;
 	std::vector<Face> faces;
 	img::Color color;
+	Matrix allMatrix;
 
-	Figure() {};
+	Figure () {};
 	void applyTransformation (Matrix const& t);
 };
 

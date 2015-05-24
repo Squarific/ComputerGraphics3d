@@ -2,6 +2,7 @@
 #define TWODHELPERS_H
 
 #include <list>
+#include <vector>
 
 class Color {
 public:
@@ -17,9 +18,11 @@ class Point2d {
 public:
 	Point2d() {};
 	Point2d(double x, double y);
+	Point2d(double x, double y, double z);
 	
 	double x;
 	double y;
+	double z;
 };
 
 class Line2d {
@@ -33,5 +36,13 @@ public:
 };
 
 typedef std::list<Line2d> Lines2d;
+
+class ZBuffer: public std::vector<std::vector<double> >
+{
+  public:
+	//Constructor: maakt een Z-Buffer van de correcte
+	//grootte aan en initialiseert alle velden op +inf
+	ZBuffer(int width, int height);
+};
 
 #endif /* TWODHELPERS_H */

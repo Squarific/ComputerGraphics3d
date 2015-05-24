@@ -18,6 +18,10 @@ img::EasyImage generate_image(const ini::Configuration &configuration) {
         return render.renderWireFrame(configuration);
     }
 
+    if (type == std::string("ZBufferedWireframe")) {
+        return render.renderWireFrameZBuffered(configuration);
+    }
+
     return img::EasyImage(256, 256, img::Color(0, 0, 0));
 }
 

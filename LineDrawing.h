@@ -38,12 +38,13 @@ public:
 	void addLinesFromLString (LParser::LSystem2D& lSystem2d, std::string lString, img::Color color);
 
 	// Add lines using 3d figures
-	// This changes the 3d figures
 	void addLinesFromProjection (Figures3D& figures);
 
 	// Draw the lines to the image with size the max size of x or y
 	img::EasyImage draw2dLines(img::EasyImage& image);
 	img::EasyImage draw2dLines(img::EasyImage& image, int size);
+	img::EasyImage draw2dLinesZBuffered(ZBuffer buffer, img::EasyImage& image);
+	img::EasyImage draw2dLinesZBuffered(img::EasyImage& image, int size);
 };
 
 #endif /* LINEDRAWING_H */

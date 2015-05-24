@@ -11,9 +11,7 @@
 #include <string>
 
 inline int roundToInt(double d) {
-    return d < 0 ? 
-        std::ceil(d-0.5):
-        std::floor(d+0.5);
+    return d < 0 ? std::ceil(d-0.5) : std::floor(d+0.5);
 }
 
 img::EasyImage Render::renderTwo2dLSystem (const ini::Configuration &configuration) {
@@ -47,9 +45,10 @@ img::EasyImage Render::renderWireFrame (const ini::Configuration &configuration)
 
     Figures3D figures;
 
-	while (nrFigures > 0) {
-        nrFigures--;
-        figures.push_back(figure3dFromConfig(configuration[(std::string("Figure") + std::to_string(nrFigures)).c_str()]));
+    int figureNr = 0;
+	while (figureNr < nrFigures) {
+        figures.push_back(figure3dFromConfig(configuration[(std::string("Figure") + std::to_string(figureNr)).c_str()]));
+        figureNr++;
     }
 
     VectorHelpers vh;
@@ -60,16 +59,109 @@ img::EasyImage Render::renderWireFrame (const ini::Configuration &configuration)
     vh.toPolar(eyePoint, theta, phi, r);
     
     Matrix eyePointMatrix = vh.eyePointMatrix(theta, phi, r);
-    std::cout << eyePointMatrix;
 
     for (auto &figure : figures) {
-        figure.applyTransformation(eyePointMatrix);
+        figure.applyTransformation(figure.allMatrix * eyePointMatrix);
     }
 
     wireFrameLines.addLinesFromProjection(figures);
 
     img::EasyImage image = img::EasyImage(size, size, img::Color(roundToInt(back[0] * 255), roundToInt(back[1] * 255), roundToInt(back[2] * 255)));
     wireFrameLines.draw2dLines(image, size);
+
+    return image;
+}
+
+img::EasyImage Render::renderWireFrameZBuffered (const ini::Configuration &configuration) {
+    LineDrawing wireFrameLines = LineDrawing();
+
+    int size = configuration["General"]["size"].as_int_or_die();
+    int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+
+    std::vector<double> back = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+    std::vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+    Vector3D eyePoint = Vector3D::point(eye[0], eye[1], eye[2]);
+
+    Figures3D figures;
+
+    int figureNr = 0;
+    while (figureNr < nrFigures) {
+        figures.push_back(figure3dFromConfig(configuration[(std::string("Figure") + std::to_string(figureNr)).c_str()]));
+        figureNr++;
+    }
+
+    VectorHelpers vh;
+
+    double theta;
+    double phi;
+    double r;
+    vh.toPolar(eyePoint, theta, phi, r);
+    
+    Matrix eyePointMatrix = vh.eyePointMatrix(theta, phi, r);
+
+    for (auto &figure : figures) {
+        figure.applyTransformation(figure.allMatrix * eyePointMatrix);
+    }
+
+    wireFrameLines.addLinesFromProjection(figures);
+
+    img::EasyImage image = img::EasyImage(size, size, img::Color(roundToInt(back[0] * 255), roundToInt(back[1] * 255), roundToInt(back[2] * 255)));
+    wireFrameLines.draw2dLinesZBuffered(image, size);
+
+    return image;
+}
+
+void projectFigures (Figures3D figures, img::EasyImage image, int size) {
+    for (auto &figure : figures) {
+        std::vector<Point2d> projected_points;
+
+        for (auto &point : figure.points) {
+            projected_points.push_back(Point2d(point.x / -point.z, point.y / -point.z, point.z));
+        }
+
+        Color color = Color(figure.color.red, figure.color.green, figure.color.blue);
+        for (auto &face : figure.faces) {
+            int size = face.point_indexes.size();
+            for (int i = 0; i < size; i++) {
+                this->addLine(Line2d(projected_points[face.point_indexes[i]], projected_points[face.point_indexes[(i + 1) % size]], color));
+            }
+        }
+    }
+}
+
+img::EasyImage Render::renderZBuffered (const ini::Configuration &configuration) {
+    LineDrawing wireFrameLines = LineDrawing();
+
+    int size = configuration["General"]["size"].as_int_or_die();
+    int nrFigures = configuration["General"]["nrFigures"].as_int_or_die();
+
+    std::vector<double> back = configuration["General"]["backgroundcolor"].as_double_tuple_or_die();
+    std::vector<double> eye = configuration["General"]["eye"].as_double_tuple_or_die();
+    Vector3D eyePoint = Vector3D::point(eye[0], eye[1], eye[2]);
+
+    Figures3D figures;
+
+    int figureNr = 0;
+    while (figureNr < nrFigures) {
+        figures.push_back(figure3dFromConfig(configuration[(std::string("Figure") + std::to_string(figureNr)).c_str()]));
+        figureNr++;
+    }
+
+    VectorHelpers vh;
+
+    double theta;
+    double phi;
+    double r;
+    vh.toPolar(eyePoint, theta, phi, r);
+    
+    Matrix eyePointMatrix = vh.eyePointMatrix(theta, phi, r);
+
+    for (auto &figure : figures) {
+        figure.applyTransformation(figure.allMatrix * eyePointMatrix);
+    }
+
+    img::EasyImage image = img::EasyImage(size, size, img::Color(roundToInt(back[0] * 255), roundToInt(back[1] * 255), roundToInt(back[2] * 255)));
+    projectFigures(figures, image, size);
 
     return image;
 }
